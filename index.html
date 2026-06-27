@@ -47,7 +47,7 @@
     <div id="app-content" class="hidden">
         <!-- Top Navigation -->
         <nav class="bg-gray-900 border-b border-gray-800 p-4 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="max-w-7xl mx-auto flex justify-between items-center flex-wrap gap-3 sm:flex-nowrap">
                 <div class="flex items-center space-x-3">
                     <div class="bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/30">
                         <i data-lucide="trending-up" class="w-6 h-6 text-emerald-400"></i>
@@ -57,15 +57,15 @@
                         <p class="text-xs text-gray-400">Sistem Pencatatan Otomatis Cloud</p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-3 text-sm">
-                    <span class="flex h-2 w-2 relative">
-                        <span id="sync-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span id="sync-dot" class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    <!-- Status Database -->
-                    <span id="db-status" class="text-emerald-400 font-bold text-xs bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
-                        <i data-lucide="cloud" class="w-3.5 h-3.5"></i> Terhubung ke Cloud
-                    </span>
+                <div class="flex items-center space-x-3 text-sm flex-wrap sm:flex-nowrap gap-2">
+                    <!-- Status Database & Database Config Trigger Button -->
+                    <button id="btn-db-config" class="text-yellow-400 font-bold text-xs bg-yellow-500/10 px-3 py-1.5 rounded-full border border-yellow-500/20 flex items-center gap-1.5 hover:bg-yellow-500/20 transition-all cursor-pointer">
+                        <span class="flex h-2 w-2 relative">
+                            <span id="sync-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                            <span id="sync-dot" class="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                        </span>
+                        <span id="db-status-text">Database Setup</span>
+                    </button>
                     <!-- User Profile Info & Logout -->
                     <span id="user-badge" class="text-blue-400 font-bold text-xs bg-blue-500/10 px-3 py-1.5 rounded-full border border-blue-500/20 flex items-center gap-1.5">
                         <i data-lucide="user" class="w-3.5 h-3.5"></i> <span id="current-user-name">User</span>
@@ -307,6 +307,37 @@
         </main>
     </div>
 
+    <!-- Modal Setup Database Config (Kunci penyelesaian gagal deploy) -->
+    <div id="modal-db-config" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="settings" class="w-5 h-5 text-emerald-400"></i> Hubungkan Firebase Cloud
+                </h3>
+                <button id="modal-db-close" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-xs text-gray-400 leading-relaxed">
+                Supaya data lo kesimpan aman secara permanen dan bisa dibuka barengan di HP maupun Laptop, lo harus hubungkan ke project Firebase Firestore lo sendiri. 
+            </p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1 font-medium">Tempel Firebase SDK Config JSON</label>
+                    <textarea id="db-config-json" rows="6" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-3 text-xs font-mono focus:outline-none focus:border-emerald-500 text-emerald-400" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "projek-lo.firebaseapp.com",
+  "projectId": "projek-lo",
+  "storageBucket": "projek-lo.appspot.com",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+                </div>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button id="btn-save-db-config" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition-all flex-1 cursor-pointer">Simpan & Hubungkan Database</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Alert Custom (Anti Browser Alert) -->
     <div id="modal-alert" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm flex justify-center items-center p-4">
         <div class="bg-gray-900 border border-red-500/30 p-6 rounded-2xl max-w-sm w-full text-center space-y-4 shadow-2xl">
@@ -349,50 +380,67 @@
         } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         // --- GLOBAL ENVIRONMENT SETUP ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'bizmanager-cloud-store';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'p-p-manager-pro-store';
         
-        // =========================================================================
-        // PENTING: SEBELUM DEPLOY KE GITHUB PAGES, GANTI BARIS DI BAWAH INI DENGAN
-        // KONFIGURASI WEB APP FIREBASE LO SENDIRI BIAR KONEKSINYA MASUK KE AKUN LO!
-        // =========================================================================
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : {
-                apiKey: "SALIN_API_KEY_LO_DARI_CONSOLE_FIREBASE", 
-                authDomain: "PROJEK_LO_DISINI.firebaseapp.com",
-                projectId: "PROJEK_LO_DISINI",
-                storageBucket: "PROJEK_LO_DISINI.appspot.com",
-                messagingSenderId: "SENDER_ID_PROJEK_LO",
-                appId: "APP_ID_PROJEK_LO"
-              };
+        // Load configuration from localStorage to allow seamless dynamic user setup
+        let activeFirebaseConfig = JSON.parse(localStorage.getItem('p_p_firebase_config'));
+        
+        // Terintegrasi langsung dengan konfigurasi Firebase lo sendiri!
+        if (!activeFirebaseConfig) {
+            activeFirebaseConfig = {
+                apiKey: "AIzaSyBhLTt4UQDQGD50urnUHuHIU_XpMVqhVuE",
+                authDomain: "myworkspace-f6e5e.firebaseapp.com",
+                projectId: "myworkspace-f6e5e",
+                storageBucket: "myworkspace-f6e5e.firebasestorage.app",
+                messagingSenderId: "317826259353",
+                appId: "1:317826259353:web:9ad1884b61264975f21b08"
+            };
+            // Simpan ke localstorage sebagai cache agar setup tidak hilang
+            localStorage.setItem('p_p_firebase_config', JSON.stringify(activeFirebaseConfig));
+        }
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // Firebase Auth initialization (Rule 3)
+        // Firebase objects
+        let app = null;
+        let auth = null;
+        let db = null;
         let currentUser = null;
-        const initAuth = async () => {
+
+        // Try initializing Firebase
+        async function initializeFirebaseSystem() {
             try {
-                await signInAnonymously(auth);
-            } catch (err) {
-                console.error("Firebase Auth Error:", err);
-            }
-        };
-        initAuth();
+                if (activeFirebaseConfig && activeFirebaseConfig.apiKey) {
+                    app = initializeApp(activeFirebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                // Jalankan sinkronisasi real-time jika user sudah login di UI aplikasi kita
-                if (loggedInUser) {
-                    startRealtimeSync();
+                    // Sign-In with better error handling
+                    try {
+                        await signInAnonymously(auth);
+                        onAuthStateChanged(auth, (user) => {
+                            if (user) {
+                                currentUser = user;
+                                setConnectedUI();
+                                if (loggedInUser) {
+                                    startRealtimeSync();
+                                }
+                            }
+                        });
+                    } catch (authErr) {
+                        console.error("Firebase Auth Error:", authErr);
+                        setDisconnectedUI("Auth Gagal");
+                        showNotification("Setup Auth Diperlukan", "Project Firebase lo belum aktifkan 'Anonymous Authentication'. Silakan buka Firebase Console -> Authentication -> Sign-in method -> Aktifkan Anonymous.");
+                    }
+                } else {
+                    setDisconnectedUI("Setup Required");
                 }
+            } catch (err) {
+                console.error("Firebase System Init Error:", err);
+                setDisconnectedUI("Error Config");
             }
-        });
+        }
+        initializeFirebaseSystem();
 
-        // --- AUTHENTICATION ENGINE (BIZMANAGER SPECIFIC) ---
+        // --- AUTHENTICATION ENGINE (P&P USER SPECIFIC) ---
         const ALLOWED_USERS = {
             "prast": { name: "Prast", pass: "admin123" },
             "putri": { name: "Putri", pass: "admin123" }
@@ -450,7 +498,7 @@
 
         // Event Logout (Menggunakan Custom Confirm Modal)
         document.getElementById('btn-logout').addEventListener('click', () => {
-            showConfirm("Keluar Sistem", "Apakah lo yakin ingin keluar dari sistem BizManager?", () => {
+            showConfirm("Keluar Sistem", "Apakah lo yakin ingin keluar dari sistem P & P Manager Pro?", () => {
                 sessionStorage.removeItem('biz_logged_in_user');
                 loggedInUser = null;
                 checkAuth();
@@ -473,6 +521,7 @@
             return 'Rp ' + parseInt(angka || 0).toLocaleString('id-ID');
         }
 
+        // Custom Alert Handler
         function showNotification(title, message) {
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-msg').innerText = message;
@@ -483,7 +532,7 @@
             document.getElementById('modal-alert').classList.add('hidden');
         });
 
-        // Custom Confirm Handler
+        // Custom Confirm Handler (Anti Browser Confirm)
         function showConfirm(title, message, callback) {
             document.getElementById('confirm-title').innerText = title;
             document.getElementById('confirm-msg').innerText = message;
@@ -502,6 +551,39 @@
             onConfirmAction = null;
         });
 
+        // Setup UI Config Trigger Modal
+        document.getElementById('btn-db-config').addEventListener('click', () => {
+            if (activeFirebaseConfig && activeFirebaseConfig.apiKey) {
+                document.getElementById('db-config-json').value = JSON.stringify(activeFirebaseConfig, null, 2);
+            }
+            document.getElementById('modal-db-config').classList.remove('hidden');
+        });
+
+        document.getElementById('modal-db-close').addEventListener('click', () => {
+            document.getElementById('modal-db-config').classList.add('hidden');
+        });
+
+        // Simpan Konfigurasi Database Manual
+        document.getElementById('btn-save-db-config').addEventListener('submit', (e) => e.preventDefault());
+        document.getElementById('btn-save-db-config').addEventListener('click', () => {
+            const rawJson = document.getElementById('db-config-json').value.trim();
+            try {
+                const parsedConfig = JSON.parse(rawJson);
+                if (!parsedConfig.apiKey || !parsedConfig.projectId) {
+                    showNotification("Input Error", "Format Firebase JSON lo salah! Wajib memiliki field apiKey dan projectId.");
+                    return;
+                }
+                localStorage.setItem('p_p_firebase_config', JSON.stringify(parsedConfig));
+                document.getElementById('modal-db-config').classList.add('hidden');
+                
+                showConfirm("Config Tersimpan", "Konfigurasi database cloud berhasil disimpan. Aplikasi perlu direfresh agar koneksi database baru aktif.", () => {
+                    window.location.reload();
+                });
+            } catch (err) {
+                showNotification("Format Error", "Gagal membaca JSON. Pastikan lo menyalin seluruh isi tanda kurung kurawal config dari Firebase dengan benar!");
+            }
+        });
+
         // Set default input tanggal ke hari ini
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('t-tanggal').value = todayStr;
@@ -509,7 +591,7 @@
 
         // --- ONE-TIME LOCAL TO CLOUD MIGRATION ---
         async function migrateLocalDataToCloud() {
-            if (!currentUser) return;
+            if (!currentUser || !db) return;
             
             // Cek data lama di localStorage
             const oldProducts = JSON.parse(localStorage.getItem('biz_products'));
@@ -552,14 +634,7 @@
 
         // --- REAL-TIME FIRESTORE DATABASE LISTENER SYNC (Rule 1 & Rule 2) ---
         function startRealtimeSync() {
-            if (!currentUser) return;
-
-            const syncDot = document.getElementById('sync-dot');
-            const syncPing = document.getElementById('sync-ping');
-
-            // Set Visual Status Connecting
-            syncDot.className = "relative inline-flex rounded-full h-2 w-2 bg-yellow-500";
-            syncPing.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75";
+            if (!currentUser || !db) return;
 
             // 1. Sync Collection Products (Rule 1: Public Paths, Rule 2: Simple Query)
             const productsCol = collection(db, 'artifacts', appId, 'public', 'data', 'products');
@@ -570,10 +645,9 @@
                 });
                 renderAllData();
                 hitungUlangKeuangan();
-                setConnectedUI();
             }, (error) => {
                 console.error("Firestore Products Sync Error:", error);
-                setDisconnectedUI();
+                setDisconnectedUI("Koneksi Error");
             });
 
             // 2. Sync Collection Sales
@@ -585,10 +659,9 @@
                 });
                 renderAllData();
                 hitungUlangKeuangan();
-                setConnectedUI();
             }, (error) => {
                 console.error("Firestore Sales Sync Error:", error);
-                setDisconnectedUI();
+                setDisconnectedUI("Koneksi Error");
             });
 
             // 3. Sync Collection Expenses
@@ -600,10 +673,9 @@
                 });
                 renderAllData();
                 hitungUlangKeuangan();
-                setConnectedUI();
             }, (error) => {
                 console.error("Firestore Expenses Sync Error:", error);
-                setDisconnectedUI();
+                setDisconnectedUI("Koneksi Error");
             });
         }
 
@@ -616,15 +688,25 @@
         function setConnectedUI() {
             const syncDot = document.getElementById('sync-dot');
             const syncPing = document.getElementById('sync-ping');
+            const statusText = document.getElementById('db-status-text');
+            const statusBtn = document.getElementById('btn-db-config');
+
             syncDot.className = "relative inline-flex rounded-full h-2 w-2 bg-emerald-500";
             syncPing.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
+            statusText.innerText = "Cloud Connected";
+            statusBtn.className = "text-emerald-400 font-bold text-xs bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 flex items-center gap-1.5 hover:bg-emerald-500/20 transition-all cursor-pointer";
         }
 
-        function setDisconnectedUI() {
+        function setDisconnectedUI(reason = "Cloud Setup Needed") {
             const syncDot = document.getElementById('sync-dot');
             const syncPing = document.getElementById('sync-ping');
+            const statusText = document.getElementById('db-status-text');
+            const statusBtn = document.getElementById('btn-db-config');
+
             syncDot.className = "relative inline-flex rounded-full h-2 w-2 bg-red-500";
             syncPing.className = "absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-0";
+            statusText.innerText = reason;
+            statusBtn.className = "text-red-400 font-bold text-xs bg-red-500/10 px-3 py-1.5 rounded-full border border-red-500/20 flex items-center gap-1.5 hover:bg-red-500/20 transition-all cursor-pointer";
         }
 
         // --- CORE CALCULATOR ENGINE ---
@@ -846,7 +928,10 @@
         // 1. Submit Master Produk Baru ke Cloud
         document.getElementById('form-produk').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser) return;
+            if (!currentUser || !db) {
+                showNotification("Database Offline", "Lo gak bisa simpan barang karena database cloud belum terhubung! Silakan klik tombol 'Database Setup' berwarna merah di navigasi atas untuk menghubungkannya.");
+                return;
+            }
 
             const idProduk = 'p_' + Date.now();
             const productDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', idProduk);
@@ -869,7 +954,10 @@
         // 2. Submit Transaksi Jual (Potong Stok otomatis & Hitung Laba Kotor)
         document.getElementById('form-transaksi').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser) return;
+            if (!currentUser || !db) {
+                showNotification("Database Offline", "Transaksi diblokir karena database cloud belum terhubung. Hubungkan project Firebase lo terlebih dahulu!");
+                return;
+            }
 
             const prodId = document.getElementById('t-produk').value;
             const qty = parseInt(document.getElementById('t-qty').value);
@@ -926,7 +1014,10 @@
         // 3. Submit Biaya Operasional Baru
         document.getElementById('form-biaya').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser) return;
+            if (!currentUser || !db) {
+                showNotification("Database Offline", "Log biaya tidak dapat dicatat karena database cloud belum terhubung.");
+                return;
+            }
 
             const expId = 'exp_' + Date.now();
             const expenseDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'expenses', expId);
@@ -948,7 +1039,7 @@
 
         // 4. Bersihkan Database Cloud (Menggunakan Custom Confirm Modal)
         document.getElementById('btn-reset-data').addEventListener('click', () => {
-            if (!currentUser) return;
+            if (!currentUser || !db) return;
             
             showConfirm(
                 "Reset Database Cloud", 
