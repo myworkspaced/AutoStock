@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BizManager v1.1 - Cloud Auto Stok & Keuangan</title>
+    <title>P & P Manager Pro v1.2 - Cloud Auto Stok & Keuangan</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons for premium look -->
@@ -18,7 +18,7 @@
                 <div class="bg-emerald-500/10 p-3 rounded-2xl border border-emerald-500/30 w-fit mx-auto">
                     <i data-lucide="trending-up" class="w-8 h-8 text-emerald-400"></i>
                 </div>
-                <h2 class="text-2xl font-black text-white">BizManager Cloud</h2>
+                <h2 class="text-2xl font-black text-white">P & P Manager Pro</h2>
                 <p class="text-xs text-gray-400">Pencatatan Stok & Keuangan Real-time</p>
             </div>
 
@@ -53,7 +53,7 @@
                         <i data-lucide="trending-up" class="w-6 h-6 text-emerald-400"></i>
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold tracking-wider text-emerald-400">BizManager</h1>
+                        <h1 class="text-xl font-bold tracking-wider text-emerald-400">P & P Manager Pro</h1>
                         <p class="text-xs text-gray-400">Sistem Pencatatan Otomatis Cloud</p>
                     </div>
                 </div>
@@ -82,7 +82,7 @@
             <!-- Welcome Message & Reset -->
             <div class="bg-gradient-to-r from-emerald-950/40 to-slate-900 border border-emerald-500/20 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 class="text-base font-bold text-emerald-300">Selamat Datang di BizManager Cloud!</h2>
+                    <h2 class="text-base font-bold text-emerald-300">Selamat Datang di P & P Manager Pro!</h2>
                     <p class="text-xs text-gray-400 font-medium">Halo <span id="welcome-user-name" class="text-white underline font-semibold">User</span>, semua data lo tersimpan aman di server database cloud secara permanen.</p>
                 </div>
                 <button id="btn-reset-data" class="px-3 py-1.5 bg-red-950/50 hover:bg-red-900/50 text-red-400 border border-red-500/30 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer">
@@ -307,7 +307,7 @@
         </main>
     </div>
 
-    <!-- Modal Alert Custom -->
+    <!-- Modal Alert Custom (Anti Browser Alert) -->
     <div id="modal-alert" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm flex justify-center items-center p-4">
         <div class="bg-gray-900 border border-red-500/30 p-6 rounded-2xl max-w-sm w-full text-center space-y-4 shadow-2xl">
             <div class="w-12 h-12 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto border border-red-500/20">
@@ -319,10 +319,25 @@
         </div>
     </div>
 
+    <!-- Modal Confirm Custom (Anti Browser Confirm) -->
+    <div id="modal-confirm" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <div class="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mx-auto border border-amber-500/20">
+                <i data-lucide="help-circle" class="w-6 h-6"></i>
+            </div>
+            <h4 class="text-lg font-bold text-white" id="confirm-title">Konfirmasi Tindakan</h4>
+            <p class="text-sm text-gray-400" id="confirm-msg">Apakah lo yakin ingin melanjutkan?</p>
+            <div class="flex gap-3 mt-2">
+                <button id="confirm-cancel" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-750 text-gray-300 rounded-xl text-xs font-semibold transition-all flex-1 cursor-pointer">Batal</button>
+                <button id="confirm-yes" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition-all flex-1 cursor-pointer">Ya, Eksekusi</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase SDK Modular Import -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { 
             getFirestore, 
             doc, 
@@ -336,16 +351,19 @@
         // --- GLOBAL ENVIRONMENT SETUP ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'bizmanager-cloud-store';
         
-        // Firebase configuration fallback (Pastikan ganti dengan config Anda saat deploy asli)
+        // =========================================================================
+        // PENTING: SEBELUM DEPLOY KE GITHUB PAGES, GANTI BARIS DI BAWAH INI DENGAN
+        // KONFIGURASI WEB APP FIREBASE LO SENDIRI BIAR KONEKSINYA MASUK KE AKUN LO!
+        // =========================================================================
         const firebaseConfig = typeof __firebase_config !== 'undefined' 
             ? JSON.parse(__firebase_config) 
             : {
-                apiKey: "", // Masukkan API Key Firebase Anda di sini jika deploy mandiri
-                authDomain: "training-b00a8.firebaseapp.com",
-                projectId: "training-b00a8",
-                storageBucket: "training-b00a8.appspot.com",
-                messagingSenderId: "36737525287",
-                appId: "1:36737525287:web:9c84e1b82143fc939daec0"
+                apiKey: "SALIN_API_KEY_LO_DARI_CONSOLE_FIREBASE", 
+                authDomain: "PROJEK_LO_DISINI.firebaseapp.com",
+                projectId: "PROJEK_LO_DISINI",
+                storageBucket: "PROJEK_LO_DISINI.appspot.com",
+                messagingSenderId: "SENDER_ID_PROJEK_LO",
+                appId: "APP_ID_PROJEK_LO"
               };
 
         // Initialize Firebase
@@ -357,11 +375,7 @@
         let currentUser = null;
         const initAuth = async () => {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
             } catch (err) {
                 console.error("Firebase Auth Error:", err);
             }
@@ -434,13 +448,13 @@
             }
         });
 
-        // Event Logout
+        // Event Logout (Menggunakan Custom Confirm Modal)
         document.getElementById('btn-logout').addEventListener('click', () => {
-            if (confirm("Apakah lo yakin ingin keluar dari sistem?")) {
+            showConfirm("Keluar Sistem", "Apakah lo yakin ingin keluar dari sistem BizManager?", () => {
                 sessionStorage.removeItem('biz_logged_in_user');
                 loggedInUser = null;
                 checkAuth();
-            }
+            });
         });
 
         // --- STATE & UTILS ---
@@ -452,6 +466,8 @@
         let unsubProducts = null;
         let unsubSales = null;
         let unsubExpenses = null;
+
+        let onConfirmAction = null;
 
         function formatRupiah(angka) {
             return 'Rp ' + parseInt(angka || 0).toLocaleString('id-ID');
@@ -465,6 +481,25 @@
 
         document.getElementById('modal-close').addEventListener('click', () => {
             document.getElementById('modal-alert').classList.add('hidden');
+        });
+
+        // Custom Confirm Handler
+        function showConfirm(title, message, callback) {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-msg').innerText = message;
+            document.getElementById('modal-confirm').classList.remove('hidden');
+            onConfirmAction = callback;
+        }
+
+        document.getElementById('confirm-cancel').addEventListener('click', () => {
+            document.getElementById('modal-confirm').classList.add('hidden');
+            onConfirmAction = null;
+        });
+
+        document.getElementById('confirm-yes').addEventListener('click', () => {
+            document.getElementById('modal-confirm').classList.add('hidden');
+            if (onConfirmAction) onConfirmAction();
+            onConfirmAction = null;
         });
 
         // Set default input tanggal ke hari ini
@@ -482,8 +517,6 @@
             const oldExpenses = JSON.parse(localStorage.getItem('biz_expenses'));
 
             if (oldProducts || oldSales || oldExpenses) {
-                console.log("Menemukan data offline lokal, bermigrasi ke database cloud...");
-                
                 // Push produk ke Cloud Firestore (Rule 1: Strict Paths)
                 if (oldProducts) {
                     for (let id in oldProducts) {
@@ -514,7 +547,6 @@
                 localStorage.removeItem('biz_products');
                 localStorage.removeItem('biz_sales');
                 localStorage.removeItem('biz_expenses');
-                console.log("Migrasi data ke Cloud selesai dengan sukses!");
             }
         }
 
@@ -744,31 +776,33 @@
 
         // --- ATTACH EVENT LISTENERS FOR DYNAMIC BUTTONS ---
         function bindDynamicButtons() {
-            // Delete Product Action
+            // Delete Product Action (Menggunakan Custom Confirm Modal)
             document.querySelectorAll('.btn-delete-product').forEach(btn => {
-                btn.onclick = async (e) => {
+                btn.onclick = (e) => {
                     if (!currentUser) return;
                     const id = e.currentTarget.getAttribute('data-id');
-                    if (confirm(`Apakah lo yakin ingin menghapus produk "${localProducts[id].nama_produk}"?`)) {
+                    const namaProd = localProducts[id] ? localProducts[id].nama_produk : "Produk ini";
+                    
+                    showConfirm("Hapus Barang", `Apakah lo yakin ingin menghapus produk "${namaProd}" dari inventory?`, async () => {
                         try {
                             const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', id);
                             await deleteDoc(productRef);
                         } catch (err) {
                             console.error("Gagal menghapus produk cloud:", err);
                         }
-                    }
+                    });
                 };
             });
 
-            // Delete / Rollback Sale Action (Mengembalikan stok barang otomatis)
+            // Delete / Rollback Sale Action (Menggunakan Custom Confirm Modal)
             document.querySelectorAll('.btn-delete-sale').forEach(btn => {
-                btn.onclick = async (e) => {
+                btn.onclick = (e) => {
                     if (!currentUser) return;
                     const id = e.currentTarget.getAttribute('data-id');
                     const prodId = e.currentTarget.getAttribute('data-prodid');
                     const qty = parseInt(e.currentTarget.getAttribute('data-qty'));
 
-                    if (confirm("Apakah lo yakin ingin membatalkan transaksi ini? Stok barang akan otomatis dikembalikan ke gudang.")) {
+                    showConfirm("Batalkan Transaksi", "Apakah lo yakin ingin membatalkan transaksi ini? Sisa stok barang akan dikembalikan ke gudang secara otomatis.", async () => {
                         try {
                             // Kembalikan stok di Firestore jika produk masih ada
                             if (localProducts[prodId]) {
@@ -785,23 +819,24 @@
                         } catch (err) {
                             console.error("Gagal membatalkan transaksi:", err);
                         }
-                    }
+                    });
                 };
             });
 
-            // Delete Expense Action
+            // Delete Expense Action (Menggunakan Custom Confirm Modal)
             document.querySelectorAll('.btn-delete-expense').forEach(btn => {
-                btn.onclick = async (e) => {
+                btn.onclick = (e) => {
                     if (!currentUser) return;
                     const id = e.currentTarget.getAttribute('data-id');
-                    if (confirm("Apakah lo yakin ingin menghapus catatan biaya operasional ini?")) {
+                    
+                    showConfirm("Hapus Pengeluaran", "Apakah lo yakin ingin menghapus catatan biaya operasional ini?", async () => {
                         try {
                             const expenseRef = doc(db, 'artifacts', appId, 'public', 'data', 'expenses', id);
                             await deleteDoc(expenseRef);
                         } catch (err) {
                             console.error("Gagal menghapus pengeluaran:", err);
                         }
-                    }
+                    });
                 };
             });
         }
@@ -911,32 +946,37 @@
             }
         });
 
-        // 4. Bersihkan Database Cloud
-        document.getElementById('btn-reset-data').addEventListener('click', async () => {
+        // 4. Bersihkan Database Cloud (Menggunakan Custom Confirm Modal)
+        document.getElementById('btn-reset-data').addEventListener('click', () => {
             if (!currentUser) return;
-            if (confirm("⚠️ PENTING: Apakah lo yakin ingin membersihkan seluruh isi database cloud? Semua data stok, penjualan, dan operasional akan hilang.")) {
-                try {
-                    // Loop hapus manual demi kepatuhan Rule 2 (No complex queries)
-                    const productsSnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'products'));
-                    productsSnapshot.forEach(async (doc) => {
-                        await deleteDoc(doc.ref);
-                    });
+            
+            showConfirm(
+                "Reset Database Cloud", 
+                "⚠️ PENTING: Apakah lo yakin ingin membersihkan seluruh isi database cloud? Semua data stok, penjualan, dan operasional akan hilang permanen.", 
+                async () => {
+                    try {
+                        // Loop hapus manual demi kepatuhan Rule 2 (No complex queries)
+                        const productsSnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'products'));
+                        productsSnapshot.forEach(async (doc) => {
+                            await deleteDoc(doc.ref);
+                        });
 
-                    const salesSnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'sales'));
-                    salesSnapshot.forEach(async (doc) => {
-                        await deleteDoc(doc.ref);
-                    });
+                        const salesSnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'sales'));
+                        salesSnapshot.forEach(async (doc) => {
+                            await deleteDoc(doc.ref);
+                        });
 
-                    const expensesSnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'));
-                    expensesSnapshot.forEach(async (doc) => {
-                        await deleteDoc(doc.ref);
-                    });
+                        const expensesSnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'));
+                        expensesSnapshot.forEach(async (doc) => {
+                            await deleteDoc(doc.ref);
+                        });
 
-                    showNotification("Berhasil", "Database cloud lo berhasil dibersihkan dengan sukses!");
-                } catch (err) {
-                    console.error("Error saat melakukan reset database cloud:", err);
+                        showNotification("Berhasil", "Database cloud lo berhasil dibersihkan dengan sukses!");
+                    } catch (err) {
+                        console.error("Error saat melakukan reset database cloud:", err);
+                    }
                 }
-            }
+            );
         });
 
         // Inisialisasi awal saat halaman di-load
